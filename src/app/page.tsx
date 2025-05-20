@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/context/AuthContext';
+import { useAuth } from '../lib/context/AuthContext';
 
 export default function Home() {
   const router = useRouter();
@@ -18,7 +18,6 @@ export default function Home() {
     }
   }, [isAuthenticated, isLoading, router]);
 
-  // Tampilkan loading saat melakukan pengecekan autentikasi
   return (
     <div className="flex justify-center items-center min-h-screen">
       <div className="text-center">

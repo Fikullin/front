@@ -46,10 +46,17 @@ export default function MainLayout({ children }: MainLayoutProps) {
           <div className="p-4 flex items-center justify-between">
             <div className="flex items-center w-full">
               <Image 
+                src="/rams.png" 
+                alt="RAMS Logo" 
+                width={60} 
+                height={60} 
+                className="flex-shrink-0"
+              />
+              <Image 
                 src="/aislogo.png" 
                 alt="AIS Logo" 
-                width={120} 
-                height={120} 
+                width={100} 
+                height={100} 
                 className="flex-shrink-0"
               />
             </div>
