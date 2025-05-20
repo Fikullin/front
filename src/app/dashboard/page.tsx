@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/context/AuthContext';
 import { 
   Chart as ChartJS, 
   CategoryScale, 
@@ -31,6 +33,21 @@ ChartJS.register(
 );
 
 export default function Dashboard() {
+  const router = useRouter();
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  useEffect(() => {
+    // Redirect ke halaman login jika belum terautentikasi
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login?callbackUrl=/dashboard');
+    }
+  }, [isAuthenticated, isLoading, router]);
+
+  // Jika masih loading atau belum terautentikasi, tampilkan loading
+  if (isLoading || !isAuthenticated) {
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+  }
+  
   // Sample data for charts
   const barChartData: ChartData<'bar'> = {
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import MainLayout from '@/components/layout/MainLayout';
-import { getAllTasks, Task, updateTask } from '@/lib/api/taskService';
+import { getTasks, Task, updateTask } from '@/lib/api/taskService';
 
 export default function Tasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -11,14 +11,17 @@ export default function Tasks() {
   const [filter, setFilter] = useState('all'); // 'all', 'completed', 'in_progress', 'not_started', 'blocked'
 
   useEffect(() => {
+    // Di dalam komponen Tasks
     const fetchTasks = async () => {
       try {
-        const data = await getAllTasks();
-        setTasks(data || []);
-        setLoading(false);
+        setLoading(true);
+        // Ubah getAllTasks() menjadi getTasks()
+        const tasksData = await getTasks();
+        setTasks(tasksData);
       } catch (error) {
         console.error('Error fetching tasks:', error);
-        setTasks([]);
+        console.error('Failed to load tasks list');
+      } finally {
         setLoading(false);
       }
     };
@@ -36,8 +39,15 @@ export default function Tasks() {
         status: newStatus 
       };
 
-      await updateTask(updatedTask);
-      setTasks(tasks.map(task => task.id === taskId ? updatedTask : task));
+      await updateTask(taskId, {
+        ...updatedTask,
+        assigned_to: typeof updatedTask.assigned_to === 'string' 
+          ? parseInt(updatedTask.assigned_to) 
+          : updatedTask.assigned_to
+      });
+      setTasks(prevTasks => prevTasks.map(task => 
+        task.id === taskId ? { ...task, status: newStatus as Task['status'] } : task
+      ));
     } catch (error) {
       console.error('Error updating task status:', error);
     }

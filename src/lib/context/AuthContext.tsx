@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('user', JSON.stringify(response.user));
       
       setUser(response.user);
-      router.push('/dashboard');
+      // Tidak perlu redirect di sini karena sudah ditangani oleh useEffect di halaman login
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {

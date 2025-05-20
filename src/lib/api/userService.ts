@@ -30,14 +30,6 @@ export interface UpdateUserData {
   phone?: string;
 }
 
-// Mock data to use when API fails
-const mockUsers: User[] = [
-  { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'admin' },
-  { id: 2, name: 'Project Manager', email: 'pm@example.com', role: 'admin' },
-  { id: 3, name: 'Tech User', email: 'tech@example.com', role: 'technician' },
-  { id: 4, name: 'Developer', email: 'dev@example.com', role: 'technician' }
-];
-
 export const getUsers = async (): Promise<User[]> => {
   try {
     console.log('Fetching users from:', `${API_URL}/users`);
@@ -45,7 +37,7 @@ export const getUsers = async (): Promise<User[]> => {
     
     if (!token) {
       console.warn('No authentication token found');
-      return mockUsers;
+      throw new Error('Authentication required');
     }
     
     const response = await axios.get(`${API_URL}/users`, {
@@ -58,8 +50,7 @@ export const getUsers = async (): Promise<User[]> => {
     return response.data;
   } catch (error) {
     console.error('Error fetching users:', error);
-    // Return mock data on error
-    return mockUsers;
+    throw error;
   }
 };
 
@@ -69,9 +60,7 @@ export const getUserById = async (id: number): Promise<User> => {
     
     if (!token) {
       console.warn('No authentication token found');
-      const mockUser = mockUsers.find(user => user.id === id);
-      if (mockUser) return mockUser;
-      throw new Error('User not found and no token available');
+      throw new Error('Authentication required');
     }
     
     const response = await axios.get(`${API_URL}/users/${id}`, {
@@ -84,9 +73,6 @@ export const getUserById = async (id: number): Promise<User> => {
     return response.data;
   } catch (error) {
     console.error(`Error fetching user with ID ${id}:`, error);
-    // Return a mock user if the real one can't be fetched
-    const mockUser = mockUsers.find(user => user.id === id);
-    if (mockUser) return mockUser;
     throw error;
   }
 };

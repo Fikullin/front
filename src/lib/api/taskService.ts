@@ -1,175 +1,227 @@
 import axios from 'axios';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
-// Task interface definition
 export interface Task {
+  project_name: string;
   id: number;
   project_id: number;
-  project_name?: string;
   action: string;
-  due_date: string;
-  status: 'not_started' | 'in_progress' | 'completed' | 'blocked';
-  assigned_to: string;
-  scope: 'task' | 'project' | 'invoice';
+  due_date?: string;
+  attachments?: string[] | string;
   status_description?: string;
-  attachments?: string[];
+  scope?: 'project' | 'task' | 'invoice';
+  assigned_to?: number | string;
+  status?: 'not_started' | 'in_progress' | 'completed' | 'blocked';
+  completed?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  title?: string;
+  description?: string;
+  priority?: string;
+  created_by?: number;
 }
 
-// Get all tasks
-export const getAllTasks = async (): Promise<Task[]> => {
+export interface CreateTaskData {
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  due_date: string | null; // Tambahkan null sebagai tipe yang valid
+  project_id: number;
+  assigned_to: number;
+}
+
+export interface UpdateTaskData {
+  title?: string;
+  description?: string;
+  status?: string;
+  priority?: string;
+  due_date?: string;
+  assigned_to?: number;
+}
+
+// Mendapatkan semua task
+export const getTasks = async (): Promise<Task[]> => {
   try {
-    // For development/testing, you can use this mock data
-    // Remove this and uncomment the axios call when your backend is ready
-    return mockTasks;
+    const token = localStorage.getItem('token');
     
-    // Uncomment this when your backend is ready
-    // const response = await axios.get(`${API_URL}/tasks`);
-    // return response.data;
+    if (!token) {
+      console.warn('No authentication token found');
+      throw new Error('Authentication required');
+    }
+    
+    const response = await axios.get(`${API_URL}/tasks`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    return response.data;
   } catch (error) {
     console.error('Error fetching tasks:', error);
+    // Return empty array instead of throwing error to prevent UI crashes
+    return [];
+  }
+};
+
+// Mendapatkan task berdasarkan ID
+export const getTaskById = async (id: number): Promise<Task> => {
+  try {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      console.warn('No authentication token found');
+      throw new Error('Authentication required');
+    }
+    
+    const response = await axios.get(`${API_URL}/tasks/${id}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching task with ID ${id}:`, error);
     throw error;
   }
 };
 
-// Get tasks for a specific project
-export const getProjectTasks = async (projectId: number): Promise<Task[]> => {
+// Mendapatkan task berdasarkan project ID
+export const getTasksByProjectId = async (projectId: number): Promise<Task[]> => {
   try {
-    // For development/testing
-    return mockTasks.filter(task => task.project_id === projectId);
+    const token = localStorage.getItem('token');
     
-    // Uncomment this when your backend is ready
-    // const response = await axios.get(`${API_URL}/projects/${projectId}/tasks`);
-    // return response.data;
+    if (!token) {
+      console.warn('No authentication token found');
+      return []; // Return empty array instead of throwing error
+    }
+    
+    const response = await axios.get(`${API_URL}/projects/${projectId}/tasks`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 30000 // Increase timeout to 30 seconds
+    });
+    
+    // Check if response data is valid
+    if (!response.data) {
+      console.warn(`Empty response from tasks API for project ${projectId}`);
+      return [];
+    }
+    
+    return response.data;
   } catch (error) {
     console.error(`Error fetching tasks for project ${projectId}:`, error);
-    throw error;
+    // Log more detailed error information
+    if (axios.isAxiosError(error) && error.response) {
+      console.error('Server response:', error.response.status, error.response.data);
+    }
+    // Return empty array instead of throwing error to prevent UI crashes
+    return [];
   }
 };
 
-// Get a single task by ID
-export const getTask = async (taskId: number): Promise<Task> => {
+// Membuat task baru
+export const createTask = async (taskData: CreateTaskData): Promise<Task> => {
   try {
-    // For development/testing
-    const task = mockTasks.find(task => task.id === taskId);
-    if (!task) throw new Error(`Task with ID ${taskId} not found`);
-    return task;
+    const token = localStorage.getItem('token');
     
-    // Uncomment this when your backend is ready
-    // const response = await axios.get(`${API_URL}/tasks/${taskId}`);
-    // return response.data;
-  } catch (error) {
-    console.error(`Error fetching task ${taskId}:`, error);
-    throw error;
-  }
-};
-
-// Create a new task
-export const createTask = async (task: Omit<Task, 'id'>): Promise<Task> => {
-  try {
-    // For development/testing
-    const newTask = {
-      ...task,
-      id: Math.max(0, ...mockTasks.map(t => t.id)) + 1
+    if (!token) {
+      console.warn('No authentication token found');
+      throw new Error('Authentication required');
+    }
+    
+    // Pastikan due_date adalah null jika string kosong
+    const sanitizedData = {
+      ...taskData,
+      due_date: taskData.due_date === '' ? null : taskData.due_date
     };
-    mockTasks.push(newTask);
-    return newTask;
     
-    // Uncomment this when your backend is ready
-    // const response = await axios.post(`${API_URL}/tasks`, task);
-    // return response.data;
+    const response = await axios.post(`${API_URL}/tasks`, sanitizedData, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    return response.data;
   } catch (error) {
     console.error('Error creating task:', error);
     throw error;
   }
 };
 
-// Update an existing task
-export const updateTask = async (task: Task): Promise<Task> => {
+// Memperbarui task
+export const updateTask = async (id: number, taskData: UpdateTaskData): Promise<Task> => {
   try {
-    // For development/testing
-    const index = mockTasks.findIndex(t => t.id === task.id);
-    if (index === -1) throw new Error(`Task with ID ${task.id} not found`);
-    mockTasks[index] = task;
-    return task;
+    const token = localStorage.getItem('token');
     
-    // Uncomment this when your backend is ready
-    // const response = await axios.put(`${API_URL}/tasks/${task.id}`, task);
-    // return response.data;
+    if (!token) {
+      console.warn('No authentication token found');
+      throw new Error('Authentication required');
+    }
+    
+    const response = await axios.put(`${API_URL}/tasks/${id}`, taskData, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    return response.data;
   } catch (error) {
-    console.error(`Error updating task ${task.id}:`, error);
+    console.error(`Error updating task with ID ${id}:`, error);
     throw error;
   }
 };
 
-// Delete a task
-export const deleteTask = async (taskId: number): Promise<void> => {
+// Menghapus task
+export const deleteTask = async (id: number): Promise<void> => {
   try {
-    // For development/testing
-    const index = mockTasks.findIndex(task => task.id === taskId);
-    if (index === -1) throw new Error(`Task with ID ${taskId} not found`);
-    mockTasks.splice(index, 1);
+    const token = localStorage.getItem('token');
     
-    // Uncomment this when your backend is ready
-    // await axios.delete(`${API_URL}/tasks/${taskId}`);
+    if (!token) {
+      console.warn('No authentication token found');
+      throw new Error('Authentication required');
+    }
+    
+    await axios.delete(`${API_URL}/tasks/${id}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
   } catch (error) {
-    console.error(`Error deleting task ${taskId}:`, error);
+    console.error(`Error deleting task with ID ${id}:`, error);
     throw error;
   }
 };
 
-// Mock data for development/testing
-const mockTasks: Task[] = [
-  {
-    id: 1,
-    project_id: 1,
-    project_name: "Website Redesign",
-    action: "Design homepage mockup",
-    due_date: "2023-12-15",
-    status: "in_progress",
-    assigned_to: "John Doe",
-    scope: "task",
-    status_description: "Working on final revisions"
-  },
-  {
-    id: 2,
-    project_id: 1,
-    project_name: "Website Redesign",
-    action: "Implement responsive navigation",
-    due_date: "2023-12-20",
-    status: "not_started",
-    assigned_to: "Jane Smith",
-    scope: "task"
-  },
-  {
-    id: 3,
-    project_id: 2,
-    project_name: "Mobile App Development",
-    action: "Create user authentication flow",
-    due_date: "2023-12-10",
-    status: "completed",
-    assigned_to: "Mike Johnson",
-    scope: "task",
-    status_description: "Completed and tested"
-  },
-  {
-    id: 4,
-    project_id: 2,
-    project_name: "Mobile App Development",
-    action: "Design app icon",
-    due_date: "2023-12-05",
-    status: "blocked",
-    assigned_to: "Sarah Williams",
-    scope: "task",
-    status_description: "Waiting for brand guidelines"
-  },
-  {
-    id: 5,
-    project_id: 3,
-    project_name: "E-commerce Platform",
-    action: "Set up payment gateway",
-    due_date: "2023-12-25",
-    status: "in_progress",
-    assigned_to: "David Brown",
-    scope: "task"
+// Mengubah status task
+export const updateTaskStatus = async (id: number, status: string): Promise<Task> => {
+  try {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      console.warn('No authentication token found');
+      throw new Error('Authentication required');
+    }
+    
+    const response = await axios.patch(`${API_URL}/tasks/${id}/status`, { status }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error(`Error updating status for task with ID ${id}:`, error);
+    throw error;
   }
-];
+};
