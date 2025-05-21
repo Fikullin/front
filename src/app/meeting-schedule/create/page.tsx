@@ -22,6 +22,7 @@ export default function CreateMeeting() {
   const [platform, setPlatform] = useState<Option | null>(null);
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
+  const [url, setUrl] = useState<string>('');
   const [users, setUsers] = useState<{ id: string; name: string }[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -81,6 +82,7 @@ export default function CreateMeeting() {
       meeting_date: startDate,
       location: '',
       endDate,
+      url
     };
 
     try {
@@ -167,7 +169,17 @@ export default function CreateMeeting() {
               required
             />
           </div>
-
+          <div>
+            <label htmlFor="url" className="block text-sm font-medium mb-1">Meeting URL</label>
+            <input
+              id="url"
+              type="url"
+              value={url}
+              onChange={(e) => { setUrl(e.target.value); setErrorMessage(null); }}
+              placeholder="Enter meeting link"
+              className="w-full px-3 py-2 border border-[var(--input-border)] rounded-md bg-[var(--input-bg)]"
+            />
+          </div>
           <div>
             <label htmlFor="startDate" className="block text-sm font-medium mb-1">Start Date</label>
             <input
@@ -191,7 +203,6 @@ export default function CreateMeeting() {
               className="w-full px-3 py-2 border border-[var(--input-border)] rounded-md bg-[var(--input-bg)]"
             />
           </div>
-
           <div className="flex justify-end space-x-4">
             <button
               type="button"

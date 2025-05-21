@@ -37,10 +37,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
-    // Clear localStorage on mount to force login for new users
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    setUser(null);
+    // On mount, check if user and token exist in localStorage to maintain login state
+    const token = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+    if (token && storedUser) {
+      setUser(JSON.parse(storedUser));
+    } else {
+      setUser(null);
+    }
     setIsLoading(false);
   }, []);
 

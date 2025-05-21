@@ -19,6 +19,7 @@ interface MeetingSchedule {
   endDate: string;
   platform: Option | null;
   selectedMembers: Option[];
+  url: string;
 }
 
 interface EditMeetingSchedulePageProps {
@@ -37,7 +38,8 @@ export default function EditMeetingSchedulePage({ params }: EditMeetingScheduleP
     startDate: '',
     endDate: '',
     platform: null,
-    selectedMembers: []
+    selectedMembers: [],
+    url: ''
   });
   const [users, setUsers] = useState<Option[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -105,6 +107,7 @@ export default function EditMeetingSchedulePage({ params }: EditMeetingScheduleP
           endDate: data.endDate || '',
           platform: platformOption,
           selectedMembers: membersOptions,
+          url: data.url || ''
         });
         setLoading(false);
       } catch (err: unknown) {
@@ -152,6 +155,7 @@ export default function EditMeetingSchedulePage({ params }: EditMeetingScheduleP
         platform: meeting.platform ? meeting.platform.value : '',
         meeting_date: meeting.startDate,
         endDate: meeting.endDate,
+        url: meeting.url
       };
 
       const res = await fetch(`/api/meeting-schedules/${id}`, {
@@ -257,6 +261,18 @@ export default function EditMeetingSchedulePage({ params }: EditMeetingScheduleP
             placeholder="Select platform"
             isClearable
             required
+          />
+        </div>
+        <div>
+          <label htmlFor="url" className="block mb-1 font-medium text-gray-900 dark:text-white">Meeting URL</label>
+          <input
+            id="url"
+            type="url"
+            name="url"
+            value={meeting.url}
+            onChange={(e) => setMeeting((prev) => ({ ...prev, url: e.target.value }))}
+            placeholder="Enter meeting link"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           />
         </div>
         <div>

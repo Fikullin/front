@@ -48,15 +48,22 @@ export default function MainLayout({ children }: MainLayoutProps) {
               <Image 
                 src="/rams.png" 
                 alt="RAMS Logo" 
-                width={60} 
-                height={60} 
+                width={50} 
+                height={50} 
+                className="flex-shrink-0"
+              />
+               <Image 
+                src="/PUI-KEKAL.png" 
+                alt="PUI-KEKAL Logo" 
+                width={90} 
+                height={90} 
                 className="flex-shrink-0"
               />
               <Image 
                 src="/aislogo.png" 
                 alt="AIS Logo" 
-                width={100} 
-                height={100} 
+                width={80} 
+                height={80} 
                 className="flex-shrink-0"
               />
             </div>
