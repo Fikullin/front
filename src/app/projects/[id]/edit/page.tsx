@@ -21,16 +21,18 @@ export default function EditProject() {
     contact_name: '',
     contact_email: '',
     contact_phone: '',
-    tech_name: '',
+    technician_id: '',
     tech_email: '',
     tech_phone: '',
-    admin_name: '',
+    admin_id: '',
     admin_email: '',
     admin_phone: '',
     state: 'Proposal',
     start_date: '',
     end_date: '',
-    progress: 0
+    progress: 0,
+   
+    
   });
 
   useEffect(() => {
@@ -58,16 +60,16 @@ export default function EditProject() {
           contact_name: projectData.contact_name || '',
           contact_email: projectData.contact_email || '',
           contact_phone: projectData.contact_phone || '',
-          tech_name: projectData.tech_name || '',
+          technician_id: projectData.technician_id ? projectData.technician_id.toString() : '',
           tech_email: projectData.tech_email || '',
           tech_phone: projectData.tech_phone || '',
-          admin_name: projectData.admin_name || '',
           admin_email: projectData.admin_email || '',
+          admin_id: projectData.admin_id ? projectData.admin_id.toString() : '',
           admin_phone: projectData.admin_phone || '',
           state: projectData.state || 'Proposal',
           start_date: projectData.start_date || '',
           end_date: projectData.end_date || '',
-          progress: projectData.progress || 0
+          progress: projectData.progress || 0,
         });
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -81,6 +83,36 @@ export default function EditProject() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    
+    // Handle automatic population of ITS contact information
+    if (name === 'technician_id') {
+      const selectedTech = techUsers.find(user => user.id === parseInt(value));
+      if (selectedTech) {
+        setFormData(prev => ({
+          ...prev,
+          technician_id: value,
+          tech_name: selectedTech.name,
+          tech_email: selectedTech.email,
+          tech_phone: selectedTech.phone || ''
+        }));
+        return;
+      }
+    }
+    
+    if (name === 'admin_id') {
+      const selectedAdmin = adminUsers.find(user => user.id === parseInt(value));
+      if (selectedAdmin) {
+        setFormData(prev => ({
+          ...prev,
+          admin_id: value,
+          admin_name: selectedAdmin.name,
+          admin_email: selectedAdmin.email,
+          admin_phone: selectedAdmin.phone || ''
+        }));
+        return;
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -94,7 +126,11 @@ export default function EditProject() {
       // Get the id from useParams hook
       const id = Array.isArray(params.id) ? params.id[0] : params.id as string;
       
-      await updateProject(parseInt(id), formData);
+      await updateProject(parseInt(id), {
+        ...formData,
+        technician_id: formData.technician_id ? parseInt(formData.technician_id) : undefined,
+        admin_id: formData.admin_id ? parseInt(formData.admin_id) : undefined
+      });
       router.push(`/projects/${id}`);
     } catch (error) {
       console.error('Error updating project:', error);
@@ -247,20 +283,16 @@ export default function EditProject() {
                 Name
               </label>
               <select
-                id="tech_name"
-                name="tech_name"
-                value={formData.tech_name}
+                id="technician_id"
+                name="technician_id"
+                value={formData.technician_id}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
               >
                 <option value="">Select Technical Contact</option>
-                {techUsers.length > 0 ? (
-                  techUsers.map(user => (
-                    <option key={user.id} value={user.name}>{user.name}</option>
-                  ))
-                ) : (
-                  <option value="Tech User">Tech User</option>
-                )}
+                {techUsers.map(user => (
+                  <option key={user.id} value={user.id}>{user.name}</option>
+                ))}
               </select>
             </div>
             
@@ -304,20 +336,16 @@ export default function EditProject() {
                 Name
               </label>
               <select
-                id="admin_name"
-                name="admin_name"
-                value={formData.admin_name}
+                id="admin_id"
+                name="admin_id"
+                value={formData.admin_id}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
               >
                 <option value="">Select Admin Contact</option>
-                {adminUsers.length > 0 ? (
-                  adminUsers.map(user => (
-                    <option key={user.id} value={user.name}>{user.name}</option>
-                  ))
-                ) : (
-                  <option value="Admin User">Admin User</option>
-                )}
+                {adminUsers.map(user => (
+                  <option key={user.id} value={user.id}>{user.name}</option>
+                ))}
               </select>
             </div>
             

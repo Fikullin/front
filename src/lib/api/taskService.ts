@@ -10,7 +10,7 @@ export interface Task {
   due_date?: string;
   attachments?: string[] | string;
   status_description?: string;
-  scope?: 'project' | 'task' | 'invoice';
+  scope?: 'project' | 'task' | 'invoice' | 'job' | string;
   assigned_to?: number | string;
   status?: 'not_started' | 'in_progress' | 'completed' | 'blocked';
   completed?: boolean;
@@ -184,21 +184,24 @@ export const updateTask = async (id: number, taskData: UpdateTaskData): Promise<
 export const deleteTask = async (id: number): Promise<void> => {
   try {
     const token = localStorage.getItem('token');
-    
-    if (!token) {
-      console.warn('No authentication token found');
-      throw new Error('Authentication required');
-    }
-    
+    if (!token) return;
+
     await axios.delete(`${API_URL}/tasks/${id}`, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       }
     });
+    console.log(`Task dengan ID ${id} berhasil dihapus`);
   } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      // Task sudah tidak ada, anggap sukses
+      console.warn(`Task dengan ID ${id} tidak ditemukan (404), dianggap sudah terhapus.`);
+      return;
+    }
+    // Untuk error lain, log saja
     console.error(`Error deleting task with ID ${id}:`, error);
-    throw error;
+    return;
   }
 };
 

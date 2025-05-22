@@ -26,7 +26,9 @@ export default function CreateProject() {
     admin_phone: '',
     state: 'Proposal',
     start_date: '',
-    end_date: ''
+    end_date: '',
+    technician_id: '',
+    admin_id: ''
   });
 
   // Fetch admin and tech users
@@ -48,6 +50,36 @@ export default function CreateProject() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    
+    // Handle automatic population of ITS contact information
+    if (name === 'technician_id') {
+      const selectedTech = techUsers.find(user => user.id === parseInt(value));
+      if (selectedTech) {
+        setFormData(prev => ({
+          ...prev,
+          technician_id: value,
+          tech_name: selectedTech.name,
+          tech_email: selectedTech.email,
+          tech_phone: selectedTech.phone || ''
+        }));
+        return;
+      }
+    }
+    
+    if (name === 'admin_id') {
+      const selectedAdmin = adminUsers.find(user => user.id === parseInt(value));
+      if (selectedAdmin) {
+        setFormData(prev => ({
+          ...prev,
+          admin_id: value,
+          admin_name: selectedAdmin.name,
+          admin_email: selectedAdmin.email,
+          admin_phone: selectedAdmin.phone || ''
+        }));
+        return;
+      }
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -58,7 +90,7 @@ export default function CreateProject() {
     e.preventDefault();
     
     try {
-      const projectData: CreateProjectData = {
+      const projectData: CreateProjectData & { technician_id?: number; admin_id?: number } = {
         name: formData.name,
         description: formData.description,
         job_scope: formData.job_scope,
@@ -73,8 +105,15 @@ export default function CreateProject() {
         admin_phone: formData.admin_phone,
         state: formData.state,
         start_date: formData.start_date,
-        end_date: formData.end_date
+        end_date: formData.end_date,
       };
+
+      if (formData.technician_id) {
+        projectData.technician_id = parseInt(formData.technician_id);
+      }
+      if (formData.admin_id) {
+        projectData.admin_id = parseInt(formData.admin_id);
+      }
   
       await createProject(projectData);
       router.push('/projects');
@@ -202,19 +241,15 @@ export default function CreateProject() {
               </label>
               <select
                 id="tech_name"
-                name="tech_name"
-                value={formData.tech_name}
+                name="technician_id"
+                value={formData.technician_id}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
               >
                 <option value="">Select Technical Contact</option>
-                {techUsers.length > 0 ? (
-                  techUsers.map(user => (
-                    <option key={user.id} value={user.name}>{user.name}</option>
-                  ))
-                ) : (
-                  <option value="Tech User">Tech User</option>
-                )}
+                {techUsers.map(user => (
+                  <option key={user.id} value={user.id}>{user.name}</option>
+                ))}
               </select>
             </div>
             
@@ -259,19 +294,15 @@ export default function CreateProject() {
               </label>
               <select
                 id="admin_name"
-                name="admin_name"
-                value={formData.admin_name}
+                name="admin_id"
+                value={formData.admin_id}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
               >
                 <option value="">Select Admin Contact</option>
-                {adminUsers.length > 0 ? (
-                  adminUsers.map(user => (
-                    <option key={user.id} value={user.name}>{user.name}</option>
-                  ))
-                ) : (
-                  <option value="Admin User">Admin User</option>
-                )}
+                {adminUsers.map(user => (
+                  <option key={user.id} value={user.id}>{user.name}</option>
+                ))}
               </select>
             </div>
             
