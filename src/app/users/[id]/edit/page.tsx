@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import Sidebar from '@/components/layout/Sidebar';
+import MainLayout from '@/components/layout/MainLayout';
 import { getUserById, updateUser, UpdateUserData } from '@/lib/api/userService';
 import { AxiosError } from 'axios';
 
@@ -63,13 +63,13 @@ export default function EditUser() {
     
     // If password is being updated, automatically update password_confirmation to match
     if (name === 'password') {
-      setFormData(prev => ({
+      setFormData((prev: UpdateUserData) => ({
         ...prev,
         [name]: value,
         password_confirmation: value
       }));
     } else {
-      setFormData(prev => ({
+      setFormData((prev: UpdateUserData) => ({
         ...prev,
         [name]: value
       }));
@@ -107,20 +107,15 @@ export default function EditUser() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 ml-64 p-8">
-          <div className="text-center py-4">Loading user data...</div>
-        </div>
-      </div>
+      <MainLayout>
+        <div className="text-center py-4">Loading user data...</div>
+      </MainLayout>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="flex-1 ml-64 p-8">
+    <MainLayout>
+      <div className="p-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Edit User</h1>
         </div>
@@ -218,6 +213,6 @@ export default function EditUser() {
           </div>
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }

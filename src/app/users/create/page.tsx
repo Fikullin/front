@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/layout/Sidebar';
-import { createUser, CreateUserData } from '@/lib/api/userService';
+import MainLayout from '../../../components/layout/MainLayout';
+import { createUser, CreateUserData } from '../../../lib/api/userService';
 import { AxiosError } from 'axios';
 
 interface ApiErrorResponse {
@@ -57,10 +57,8 @@ export default function CreateUser() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="flex-1 ml-64 p-8">
+    <MainLayout>
+      <div className="p-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Create New User</h1>
         </div>
@@ -157,6 +155,6 @@ export default function CreateUser() {
           </div>
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }

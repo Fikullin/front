@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { use } from 'react';
-import Sidebar from '@/components/layout/Sidebar';
 import { getProject, updateProject, Project } from '@/lib/api/projectService';
 import { getUsers, User } from '@/lib/api/userService';
+import MainLayout from '@/components/layout/MainLayout';
 
 export default function EditProject() {
   const router = useRouter();
@@ -13,7 +12,7 @@ export default function EditProject() {
   const [loading, setLoading] = useState(true);
   const [adminUsers, setAdminUsers] = useState<User[]>([]);
   const [techUsers, setTechUsers] = useState<User[]>([]);
-  
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -30,29 +29,22 @@ export default function EditProject() {
     state: 'Proposal',
     start_date: '',
     end_date: '',
-    progress: 0,
-   
-    
   });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Get the id from useParams hook
-        const id = Array.isArray(params.id) ? params.id[0] : params.id as string;
-        
-        // Fetch project data
+        const id = Array.isArray(params.id) ? params.id[0] : (params.id as string);
+
         const projectData = await getProject(parseInt(id));
-        
-        // Fetch users for dropdowns
+
         const users = await getUsers();
-        const admins = users.filter(user => user.role === 'admin');
-        const techs = users.filter(user => user.role === 'technician');
-        
+        const admins = users.filter((user) => user.role === 'admin');
+        const techs = users.filter((user) => user.role === 'technician');
+
         setAdminUsers(admins);
         setTechUsers(techs);
-        
-        // Set form data from project
+
         setFormData({
           name: projectData.name || '',
           description: projectData.description || '',
@@ -69,7 +61,6 @@ export default function EditProject() {
           state: projectData.state || 'Proposal',
           start_date: projectData.start_date || '',
           end_date: projectData.end_date || '',
-          progress: projectData.progress || 0,
         });
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -83,53 +74,51 @@ export default function EditProject() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
-    // Handle automatic population of ITS contact information
+
     if (name === 'technician_id') {
-      const selectedTech = techUsers.find(user => user.id === parseInt(value));
+      const selectedTech = techUsers.find((user) => user.id === parseInt(value));
       if (selectedTech) {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           technician_id: value,
           tech_name: selectedTech.name,
           tech_email: selectedTech.email,
-          tech_phone: selectedTech.phone || ''
+          tech_phone: selectedTech.phone || '',
         }));
         return;
       }
     }
-    
+
     if (name === 'admin_id') {
-      const selectedAdmin = adminUsers.find(user => user.id === parseInt(value));
+      const selectedAdmin = adminUsers.find((user) => user.id === parseInt(value));
       if (selectedAdmin) {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           admin_id: value,
           admin_name: selectedAdmin.name,
           admin_email: selectedAdmin.email,
-          admin_phone: selectedAdmin.phone || ''
+          admin_phone: selectedAdmin.phone || '',
         }));
         return;
       }
     }
-    
-    setFormData(prev => ({
+
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
-      // Get the id from useParams hook
-      const id = Array.isArray(params.id) ? params.id[0] : params.id as string;
-      
+      const id = Array.isArray(params.id) ? params.id[0] : (params.id as string);
+
       await updateProject(parseInt(id), {
         ...formData,
         technician_id: formData.technician_id ? parseInt(formData.technician_id) : undefined,
-        admin_id: formData.admin_id ? parseInt(formData.admin_id) : undefined
+        admin_id: formData.admin_id ? parseInt(formData.admin_id) : undefined,
       });
       router.push(`/projects/${id}`);
     } catch (error) {
@@ -139,27 +128,24 @@ export default function EditProject() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
+      <MainLayout>
         <div className="flex-1 ml-64 p-8">
           <div className="text-center">Loading project details...</div>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="flex-1 ml-64 p-8">
+    <MainLayout>
+      <div className="flex-1 p-8">
         <h1 className="text-2xl font-bold mb-6">Edit Project</h1>
-        
+
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Project Details Section */}
           <div className="bg-white p-6 rounded-lg shadow-sm">
             <h2 className="text-xl font-semibold mb-4">Project Details</h2>
-            
+
             <div className="mb-4">
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                 Project Name
@@ -175,7 +161,7 @@ export default function EditProject() {
                 required
               />
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
                 Project Description
@@ -190,7 +176,7 @@ export default function EditProject() {
                 rows={4}
               />
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="job_scope" className="block text-sm font-medium text-gray-700 mb-1">
                 Job Scope
@@ -205,29 +191,12 @@ export default function EditProject() {
                 placeholder="Type a job scope and press Enter"
               />
             </div>
-            
-            <div className="mb-4">
-              <label htmlFor="progress" className="block text-sm font-medium text-gray-700 mb-1">
-                Progress ({formData.progress}%)
-              </label>
-              <input
-                type="range"
-                id="progress"
-                name="progress"
-                value={formData.progress}
-                onChange={handleChange}
-                min="0"
-                max="100"
-                step="5"
-                className="w-full"
-              />
-            </div>
           </div>
-          
+
           {/* Company Contact Person Section */}
           <div className="bg-white p-6 rounded-lg shadow-sm">
             <h2 className="text-xl font-semibold mb-4">Company Contact Person</h2>
-            
+
             <div className="mb-4">
               <label htmlFor="contact_name" className="block text-sm font-medium text-gray-700 mb-1">
                 Name
@@ -242,7 +211,7 @@ export default function EditProject() {
                 placeholder="Enter PIC name"
               />
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="contact_email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email
@@ -257,7 +226,7 @@ export default function EditProject() {
                 placeholder="Enter PIC email"
               />
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="contact_phone" className="block text-sm font-medium text-gray-700 mb-1">
                 Phone
@@ -273,11 +242,11 @@ export default function EditProject() {
               />
             </div>
           </div>
-          
+
           {/* ITS Technical Contact Person Section */}
           <div className="bg-white p-6 rounded-lg shadow-sm">
             <h2 className="text-xl font-semibold mb-4">ITS Technical Contact Person</h2>
-            
+
             <div className="mb-4">
               <label htmlFor="tech_name" className="block text-sm font-medium text-gray-700 mb-1">
                 Name
@@ -290,12 +259,14 @@ export default function EditProject() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
               >
                 <option value="">Select Technical Contact</option>
-                {techUsers.map(user => (
-                  <option key={user.id} value={user.id}>{user.name}</option>
+                {techUsers.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name}
+                  </option>
                 ))}
               </select>
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="tech_email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email
@@ -310,7 +281,7 @@ export default function EditProject() {
                 placeholder="Enter technical contact email"
               />
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="tech_phone" className="block text-sm font-medium text-gray-700 mb-1">
                 Phone
@@ -326,11 +297,11 @@ export default function EditProject() {
               />
             </div>
           </div>
-          
+
           {/* ITS Administration Contact Person Section */}
           <div className="bg-white p-6 rounded-lg shadow-sm">
             <h2 className="text-xl font-semibold mb-4">ITS Administration Contact Person</h2>
-            
+
             <div className="mb-4">
               <label htmlFor="admin_name" className="block text-sm font-medium text-gray-700 mb-1">
                 Name
@@ -343,12 +314,14 @@ export default function EditProject() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
               >
                 <option value="">Select Admin Contact</option>
-                {adminUsers.map(user => (
-                  <option key={user.id} value={user.id}>{user.name}</option>
+                {adminUsers.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name}
+                  </option>
                 ))}
               </select>
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="admin_email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email
@@ -363,7 +336,7 @@ export default function EditProject() {
                 placeholder="Enter admin contact email"
               />
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="admin_phone" className="block text-sm font-medium text-gray-700 mb-1">
                 Phone
@@ -379,11 +352,11 @@ export default function EditProject() {
               />
             </div>
           </div>
-          
+
           {/* Project Schedule Section */}
           <div className="bg-white p-6 rounded-lg shadow-sm">
             <h2 className="text-xl font-semibold mb-4">Project Schedule</h2>
-            
+
             <div className="mb-4">
               <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
                 Project State
@@ -401,7 +374,7 @@ export default function EditProject() {
                 <option value="On Hold">On Hold</option>
               </select>
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="start_date" className="block text-sm font-medium text-gray-700 mb-1">
                 Start Date
@@ -415,7 +388,7 @@ export default function EditProject() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
               />
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="end_date" className="block text-sm font-medium text-gray-700 mb-1">
                 End Date
@@ -430,7 +403,7 @@ export default function EditProject() {
               />
             </div>
           </div>
-          
+
           {/* Submit Button */}
           <div className="flex justify-end">
             <button
@@ -440,15 +413,12 @@ export default function EditProject() {
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
-            >
+            <button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md">
               Save Changes
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </MainLayout>
   );
 }

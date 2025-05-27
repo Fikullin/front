@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/layout/Sidebar';
-import { createProject, CreateProjectData } from '@/lib/api/projectService';
-import { getUsers, User } from '@/lib/api/userService'; 
+import MainLayout from './../../../components/layout/MainLayout';
+import { createProject, CreateProjectData } from './../../../lib/api/projectService';
+import { getUsers, User } from './../../../lib/api/userService';
 
 export default function CreateProject() {
   const router = useRouter();
@@ -31,13 +31,12 @@ export default function CreateProject() {
     admin_id: ''
   });
 
-  // Fetch admin and tech users
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const users = await getUsers();
-        const admins = users.filter(user => user.role === 'admin');
-        const techs = users.filter(user => user.role === 'technician');
+        const users: User[] = await getUsers();
+        const admins: User[] = users.filter((user: User) => user.role === 'admin');
+        const techs: User[] = users.filter((user: User) => user.role === 'technician');
         setAdminUsers(admins);
         setTechUsers(techs);
       } catch (error) {
@@ -51,9 +50,8 @@ export default function CreateProject() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
-    // Handle automatic population of ITS contact information
     if (name === 'technician_id') {
-      const selectedTech = techUsers.find(user => user.id === parseInt(value));
+      const selectedTech = techUsers.find((user: User) => user.id === parseInt(value));
       if (selectedTech) {
         setFormData(prev => ({
           ...prev,
@@ -67,7 +65,7 @@ export default function CreateProject() {
     }
     
     if (name === 'admin_id') {
-      const selectedAdmin = adminUsers.find(user => user.id === parseInt(value));
+      const selectedAdmin = adminUsers.find((user: User) => user.id === parseInt(value));
       if (selectedAdmin) {
         setFormData(prev => ({
           ...prev,
@@ -123,10 +121,8 @@ export default function CreateProject() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="flex-1 ml-64 p-8">
+    <MainLayout>
+      <div className="flex-1 p-8">
         <h1 className="text-2xl font-bold mb-6">Add New Project</h1>
         
         <form onSubmit={handleSubmit} className="space-y-8">
@@ -247,7 +243,7 @@ export default function CreateProject() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
               >
                 <option value="">Select Technical Contact</option>
-                {techUsers.map(user => (
+                {techUsers.map((user: User) => (
                   <option key={user.id} value={user.id}>{user.name}</option>
                 ))}
               </select>
@@ -300,7 +296,7 @@ export default function CreateProject() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
               >
                 <option value="">Select Admin Contact</option>
-                {adminUsers.map(user => (
+                {adminUsers.map((user: User) => (
                   <option key={user.id} value={user.id}>{user.name}</option>
                 ))}
               </select>
@@ -406,6 +402,6 @@ export default function CreateProject() {
           </div>
         </form>
       </div>
-    </div>
+    </MainLayout>
   );
 }

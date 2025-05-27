@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTheme } from '../../contexts/ThemeContext';
 import { usePathname } from 'next/navigation';
 
 interface MainLayoutProps {
@@ -68,8 +69,25 @@ export default function MainLayout({ children }: MainLayoutProps) {
               />
             </div>
           </div>
+
+            {/* Theme Toggle Button */}
+        <button 
+          onClick={toggleDarkMode} 
+          className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-900 ml-2 mt-1"
+          aria-label="Toggle theme"
+        >
+          {!darkMode ? (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+          )}
+        </button>
           
-          <nav className="mt-6">
+          <nav className="mt-1">
             <Link href="/dashboard" className={`flex items-center px-4 py-3 ${pathname === '/dashboard' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'}`}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
@@ -92,6 +110,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
               Task
               <span className="ml-auto bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300 rounded-full px-2 py-0.5 text-xs">3</span>
             </Link>
+
+            <Link href="/meeting-schedule" className={`flex items-center px-4 py-3 ${pathname.startsWith('/meeting-schedule') ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'}`}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2v-5a2 2 0 00-2-2H5a2 2 0 00-2 2v5a2 2 0 002 2z" />
+              </svg>
+              Meeting Schedule
+            </Link>
             
             <Link href="/users" className={`flex items-center px-4 py-3 ${pathname.startsWith('/users') ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'}`}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
@@ -100,15 +125,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
               Users
             </Link>
             
-            <Link href="/meeting-schedule" className={`flex items-center px-4 py-3 ${pathname.startsWith('/meeting-schedule') ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'text-[var(--text-primary)] hover:bg-[var(--hover-bg)]'}`}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2v-5a2 2 0 00-2-2H5a2 2 0 00-2 2v5a2 2 0 002 2z" />
-              </svg>
-              Meeting Schedule
-            </Link>
+        
             
             {/* Dark/Light Mode Toggle */}
-            <div className="px-4 py-3 mt-auto">
+            {/* <div className="px-4 py-3 mt-auto">
               <button 
                 onClick={toggleDarkMode}
                 className="flex items-center w-full text-[var(--text-primary)] hover:bg-[var(--hover-bg)] px-3 py-2 rounded-md"
@@ -129,7 +149,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   </>
                 )}
               </button>
-            </div>
+            </div> */}
           </nav>
         </div>
 
