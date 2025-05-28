@@ -10,11 +10,10 @@ export default function CreateProject() {
   const router = useRouter();
   const [adminUsers, setAdminUsers] = useState<User[]>([]);
   const [techUsers, setTechUsers] = useState<User[]>([]);
-  
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    job_scope: '',
     contact_name: '',
     contact_email: '',
     contact_phone: '',
@@ -30,6 +29,9 @@ export default function CreateProject() {
     technician_id: '',
     admin_id: ''
   });
+
+  const [jobScopes, setJobScopes] = useState<string[]>([]);
+  const [newJobScope, setNewJobScope] = useState('');
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -49,7 +51,7 @@ export default function CreateProject() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
+
     if (name === 'technician_id') {
       const selectedTech = techUsers.find((user: User) => user.id === parseInt(value));
       if (selectedTech) {
@@ -63,7 +65,7 @@ export default function CreateProject() {
         return;
       }
     }
-    
+
     if (name === 'admin_id') {
       const selectedAdmin = adminUsers.find((user: User) => user.id === parseInt(value));
       if (selectedAdmin) {
@@ -84,14 +86,33 @@ export default function CreateProject() {
     }));
   };
 
+  const addJobScope = () => {
+    const trimmed = newJobScope.trim();
+    if (trimmed && !jobScopes.includes(trimmed)) {
+      setJobScopes(prev => [...prev, trimmed]);
+      setNewJobScope('');
+    }
+  };
+
+  const removeJobScope = (index: number) => {
+    setJobScopes(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleJobScopeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addJobScope();
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       const projectData: CreateProjectData & { technician_id?: number; admin_id?: number } = {
         name: formData.name,
         description: formData.description,
-        job_scope: formData.job_scope,
+        job_scope: jobScopes.join(', '),
         contact_name: formData.contact_name,
         contact_email: formData.contact_email,
         contact_phone: formData.contact_phone,
@@ -112,7 +133,7 @@ export default function CreateProject() {
       if (formData.admin_id) {
         projectData.admin_id = parseInt(formData.admin_id);
       }
-  
+
       await createProject(projectData);
       router.push('/projects');
     } catch (error) {
@@ -124,12 +145,12 @@ export default function CreateProject() {
     <MainLayout>
       <div className="flex-1 p-8">
         <h1 className="text-2xl font-bold mb-6">Add New Project</h1>
-        
+
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Project Details Section */}
           <div className="bg-white p-6 rounded-lg shadow-sm">
             <h2 className="text-xl font-semibold mb-4">Project Details</h2>
-            
+
             <div className="mb-4">
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                 Project Name
@@ -145,7 +166,7 @@ export default function CreateProject() {
                 required
               />
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
                 Project Description
@@ -160,27 +181,42 @@ export default function CreateProject() {
                 rows={4}
               />
             </div>
-            
-            <div className="mb-4">
-              <label htmlFor="job_scope" className="block text-sm font-medium text-gray-700 mb-1">
-                Job Scope
-              </label>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Job Scope</label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {jobScopes.map((jobscope, index) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1 text-sm bg-blue-500 text-white rounded-full flex items-center"
+                  >
+                    <span>{jobscope}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeJobScope(index)}
+                      className="ml-2 text-white font-bold"
+                    >
+                      &times;
+                    </button>
+                    <input type="hidden" name={`categories[${index}]`} value={jobscope} />
+                  </span>
+                ))}
+              </div>
               <input
                 type="text"
-                id="job_scope"
-                name="job_scope"
-                value={formData.job_scope}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                value={newJobScope}
+                onChange={e => setNewJobScope(e.target.value)}
+                onKeyDown={handleJobScopeKeyDown}
+                className="w-full p-2 border rounded-lg"
                 placeholder="Type a job scope and press Enter"
               />
             </div>
           </div>
-          
+
           {/* Company Contact Person Section */}
           <div className="bg-white p-6 rounded-lg shadow-sm">
             <h2 className="text-xl font-semibold mb-4">Company Contact Person</h2>
-            
+
             <div className="mb-4">
               <label htmlFor="contact_name" className="block text-sm font-medium text-gray-700 mb-1">
                 Name
@@ -195,7 +231,7 @@ export default function CreateProject() {
                 placeholder="Enter PIC name"
               />
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="contact_email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email
@@ -210,7 +246,7 @@ export default function CreateProject() {
                 placeholder="Enter PIC email"
               />
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="contact_phone" className="block text-sm font-medium text-gray-700 mb-1">
                 Phone
@@ -226,11 +262,11 @@ export default function CreateProject() {
               />
             </div>
           </div>
-          
+
           {/* ITS Technical Contact Person Section */}
           <div className="bg-white p-6 rounded-lg shadow-sm">
             <h2 className="text-xl font-semibold mb-4">ITS Technical Contact Person</h2>
-            
+
             <div className="mb-4">
               <label htmlFor="tech_name" className="block text-sm font-medium text-gray-700 mb-1">
                 Name
@@ -248,7 +284,7 @@ export default function CreateProject() {
                 ))}
               </select>
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="tech_email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email
@@ -263,7 +299,7 @@ export default function CreateProject() {
                 placeholder="Enter technical contact email"
               />
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="tech_phone" className="block text-sm font-medium text-gray-700 mb-1">
                 Phone
@@ -279,11 +315,11 @@ export default function CreateProject() {
               />
             </div>
           </div>
-          
+
           {/* ITS Administration Contact Person Section */}
           <div className="bg-white p-6 rounded-lg shadow-sm">
             <h2 className="text-xl font-semibold mb-4">ITS Administration Contact Person</h2>
-            
+
             <div className="mb-4">
               <label htmlFor="admin_name" className="block text-sm font-medium text-gray-700 mb-1">
                 Name
@@ -301,7 +337,7 @@ export default function CreateProject() {
                 ))}
               </select>
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="admin_email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email
@@ -316,7 +352,7 @@ export default function CreateProject() {
                 placeholder="Enter admin contact email"
               />
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="admin_phone" className="block text-sm font-medium text-gray-700 mb-1">
                 Phone
@@ -332,11 +368,11 @@ export default function CreateProject() {
               />
             </div>
           </div>
-          
+
           {/* Project Schedule Section */}
           <div className="bg-white p-6 rounded-lg shadow-sm">
             <h2 className="text-xl font-semibold mb-4">Project Schedule</h2>
-            
+
             <div className="mb-4">
               <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
                 Project State
@@ -354,7 +390,7 @@ export default function CreateProject() {
                 <option value="On Hold">On Hold</option>
               </select>
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="start_date" className="block text-sm font-medium text-gray-700 mb-1">
                 Start Date
@@ -368,7 +404,7 @@ export default function CreateProject() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
               />
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="end_date" className="block text-sm font-medium text-gray-700 mb-1">
                 End Date
@@ -383,7 +419,7 @@ export default function CreateProject() {
               />
             </div>
           </div>
-          
+
           {/* Submit Button */}
           <div className="flex justify-end">
             <button

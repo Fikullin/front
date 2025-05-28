@@ -30,6 +30,7 @@ export interface CreateTaskData {
   due_date: string | null; // Tambahkan null sebagai tipe yang valid
   project_id: number;
   assigned_to: number;
+  scope?: 'project' | 'task' | 'invoice' | 'activity' | 'member' | string;
 }
 
 export interface UpdateTaskData {
@@ -39,6 +40,8 @@ export interface UpdateTaskData {
   priority?: string;
   due_date?: string;
   assigned_to?: number;
+  attachment?: string;
+  scope?: 'project' | 'task' | 'invoice' | 'activity' | 'member' | string;
 }
 
 // Mendapatkan semua task

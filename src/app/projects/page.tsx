@@ -1,4 +1,4 @@
-'use client';
+  'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -248,7 +248,6 @@ export default function Projects() {
   });
   const router = useRouter();
 
-  // Replace the useEffect with this improved version
   useEffect(() => {
     const fetchProjects = async () => {
       try {
@@ -267,12 +266,10 @@ export default function Projects() {
     fetchProjects();
   }, []);
 
-  // Replace the handleDelete function with this
   const handleDelete = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this project?')) {
       try {
         await deleteProject(id);
-        // Remove the deleted project from the state
         setProjects(projects.filter(project => project.id !== id));
       } catch (error) {
         console.error('Error deleting project:', error);
@@ -285,8 +282,6 @@ export default function Projects() {
       setExpandedProject(null);
     } else {
       setExpandedProject(projectId);
-      
-      // Fetch tasks for this project if not already loaded
       if (!projectTasks[projectId]) {
         try {
           const tasks = await getProjectTasks(projectId);
@@ -315,7 +310,6 @@ export default function Projects() {
           </Link>
         </div>
 
-        {/* Projects List */}
         {loading ? (
           <div className="text-center py-4">Loading projects...</div>
         ) : (
@@ -327,7 +321,6 @@ export default function Projects() {
             ) : (
               projects.map(project => (
                 <div key={project.id} className="bg-[var(--card-background)] border border-[var(--card-border)] rounded-lg shadow-sm overflow-hidden">
-                  {/* Project header */}
                   <div className="px-6 py-4 flex justify-between items-center border-b border-[var(--card-border)]">
                     <div className="flex items-center">
                       <div className="mr-4">
@@ -356,18 +349,9 @@ export default function Projects() {
                       }`}>
                         {project.state}
                       </span>
-                      <button 
-                        onClick={() => toggleProjectDetails(project.id)}
-                        className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 transform ${expandedProject === project.id ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                      </button>
                     </div>
                   </div>
 
-                  {/* Project actions */}
                   <div className="px-6 py-3 bg-[var(--table-header-bg)] flex justify-between items-center">
                     <div className="flex space-x-4">
                       <Link href={`/projects/${project.id}`} className="text-sm text-blue-600 hover:text-blue-800">View Details</Link>
@@ -379,113 +363,7 @@ export default function Projects() {
                         Delete
                       </button>
                     </div>
-                    <div>
-                      <button 
-                        onClick={() => {
-                          setShowAddTask(showAddTask === project.id ? null : project.id);
-                          setExpandedProject(project.id);
-                        }}
-                        className="text-sm text-[var(--primary)] hover:text-[var(--primary-hover)] flex items-center"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-                        </svg>
-                        Add Task
-                      </button>
-                    </div>
                   </div>
-
-                  {/* Project details (expanded) */}
-                  {expandedProject === project.id && (
-                    <div className="px-6 py-4 border-t border-[var(--card-border)]">
-                      {/* Project description */}
-                      <div className="mb-4">
-                        <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-2">Description</h3>
-                        <p className="text-sm">{project.description || "No description provided."}</p>
-                      </div>
-
-                      {/* Tasks section */}
-                      <div>
-                        <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-2">Tasks</h3>
-                        
-                        {/* Add task form */}
-                        {showAddTask === project.id && (
-                          <div className="mb-4 p-4 bg-[var(--table-header-bg)] rounded-md">
-                            {/* Add task form content */}
-                            <h4 className="text-sm font-medium mb-2">Add New Task</h4>
-                            <form className="space-y-3">
-                              {/* Form fields */}
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div>
-                                  <input
-                                    type="text"
-                                    placeholder="Task name"
-                                    className="w-full px-3 py-2 border border-[var(--input-border)] rounded-md bg-[var(--input-bg)]"
-                                    value={newTask.action}
-                                    onChange={(e) => setNewTask({...newTask, action: e.target.value})}
-                                  />
-                                </div>
-                                <div>
-                                  <input
-                                    type="date"
-                                    className="w-full px-3 py-2 border border-[var(--input-border)] rounded-md bg-[var(--input-bg)]"
-                                    value={newTask.due_date}
-                                    onChange={(e) => setNewTask({...newTask, due_date: e.target.value})}
-                                  />
-                                </div>
-                              </div>
-                              
-                              <div className="flex justify-end space-x-2">
-                                <button
-                                  type="button"
-                                  className="px-3 py-1 border border-[var(--input-border)] rounded-md text-sm"
-                                  onClick={() => setShowAddTask(null)}
-                                >
-                                  Cancel
-                                </button>
-                                <button
-                                  type="submit"
-                                  className="px-3 py-1 bg-[var(--primary)] text-white rounded-md text-sm"
-                                >
-                                  Add Task
-                                </button>
-                              </div>
-                            </form>
-                          </div>
-                        )}
-                        
-                        {/* Tasks list */}
-                        <DndProvider backend={HTML5Backend}>
-                          <div className="bg-[var(--card-background)] rounded-md border border-[var(--card-border)]">
-                            {!projectTasks[project.id] ? (
-                              <div className="p-4 text-center text-sm text-[var(--text-secondary)]">
-                                Loading tasks...
-                              </div>
-                            ) : projectTasks[project.id].length === 0 ? (
-                              <div className="p-4 text-center text-sm text-[var(--text-secondary)]">
-                                No tasks found for this project.
-                              </div>
-                            ) : (
-                              <table className="min-w-full divide-y divide-[var(--card-border)]">
-                                <thead className="bg-[var(--table-header-bg)]">
-                                  <tr>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Task</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Due Date</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Status</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Assigned To</th>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">Actions</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="bg-[var(--card-background)] divide-y divide-[var(--card-border)]">
-                                  {/* Task rows would be rendered here */}
-                                </tbody>
-                              </table>
-                            )}
-                          </div>
-                        </DndProvider>
-                      </div>
-                    </div>
-                  )}
                 </div>
               ))
             )}

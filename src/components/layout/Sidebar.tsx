@@ -13,7 +13,7 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="w-64 bg-[var(--sidebar-bg)] h-screen shadow-md fixed left-0 top-0 overflow-y-auto text-[var(--sidebar-text)]">
+<div className="w-64 bg-[var(--sidebar-bg)] h-screen shadow-md fixed left-0 top-0 overflow-y-auto text-[var(--sidebar-text)] z-40">
       <div className="p-4 flex items-center justify-between">
         <div className="flex items-center">
           <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold mr-2">

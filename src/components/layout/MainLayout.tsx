@@ -43,7 +43,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     <div className="min-h-screen bg-[var(--background)]">
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-64 bg-[var(--card-background)] border-r border-[var(--card-border)] h-screen shadow-sm fixed">
+<div className="w-64 bg-[var(--card-background)] border-r border-[var(--card-border)] h-screen shadow-sm fixed z-40">
           <div className="p-4 flex items-center justify-between">
             <div className="flex items-center w-full">
               <Image 

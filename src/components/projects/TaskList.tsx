@@ -1,4 +1,4 @@
-'use client';
+  'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Task, deleteTask, updateTask, createTask } from '../../lib/api/taskService';
@@ -24,10 +24,29 @@ export default function TaskList({ tasks, users, jobScopes, onEditTask, onDelete
   const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
-    setLocalTasks(tasks);
+    // Normalize attachment field to array for consistent state
+    const normalizedTasks = tasks.map(task => {
+      let attachmentsArray: string[] = [];
+      if ((task as any).attachment) {
+        if (Array.isArray((task as any).attachment)) {
+          attachmentsArray = (task as any).attachment;
+        } else if (typeof (task as any).attachment === 'string') {
+          attachmentsArray = (task as any).attachment.split(',').map((s: string) => s.trim());
+        }
+      }
+      return {
+        ...task,
+        attachments: attachmentsArray
+      };
+    });
+    setLocalTasks(normalizedTasks);
   }, [tasks]);
 
-  const handleFieldChange = (taskId: number, field: keyof Task, value: unknown) => {
+  const handleFieldChange = (taskId: number, field: keyof Task, value: any) => {
+    // Ensure attachments field is always an array
+    if (field === 'attachments' && typeof value === 'string') {
+      value = value.split(',').map(s => s.trim());
+    }
     setLocalTasks(prev =>
       prev.map(task =>
         task.id === taskId ? { ...task, [field]: value } : task
@@ -36,34 +55,35 @@ export default function TaskList({ tasks, users, jobScopes, onEditTask, onDelete
   };
 
   const handleSave = async (task: Task) => {
+    const allowedScopes = ['project', 'task', 'invoice', 'activity', 'member'];
+    const allowedStatuses = ['not_started', 'in_progress', 'completed', 'blocked'];
+
+    console.log('handleSave called for task:', task.id, 'due_date:', task.due_date);
     try {
+      // Convert attachments array to comma-separated string for backend
+      const attachmentString = Array.isArray(task.attachments) ? task.attachments.join(',') : task.attachments || '';
+
+      // Sanitize scope and status values
+      const scopeValue = allowedScopes.includes(task.scope || '') ? task.scope : 'project';
+      const statusValue = allowedStatuses.includes(task.status || '') ? task.status : 'not_started';
+
       await updateTask(task.id, {
-        ...task,
         assigned_to: typeof task.assigned_to === 'string' ? parseInt(task.assigned_to) : task.assigned_to,
+        attachment: attachmentString,
+        due_date: task.due_date === '' || task.due_date === null ? undefined : task.due_date,
+        scope: scopeValue,
+        status: statusValue,
       });
-      onEditTask(task.id, task);
+      onEditTask(task.id, { attachments: attachmentString, due_date: task.due_date, scope: scopeValue, status: statusValue });
     } catch (error) {
       console.error('Error saving task:', error);
     }
   };
 
-  const handleDelete = async (taskId: number) => {
-    if (confirm('Are you sure you want to delete this task?')) {
-      await deleteTask(taskId);
-      onDeleteTask(taskId);
-    }
-  };
-
-  const handleNewTaskFieldChange = (field: keyof Task, value: unknown) => {
-    setNewTask(prev => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
   const handleCreateNewTask = async () => {
     if (!newTask) return;
     try {
+      const allowedScopes = ['project', 'task', 'invoice', 'activity', 'member'];
       let scopeValue = '';
       if (typeof newTask.scope === 'string') {
         if (newTask.scope.includes(',')) {
@@ -73,6 +93,11 @@ export default function TaskList({ tasks, users, jobScopes, onEditTask, onDelete
         }
       } else {
         scopeValue = jobScopes[0] || '';
+      }
+
+      // Validate scopeValue against allowedScopes
+      if (!allowedScopes.includes(scopeValue)) {
+        scopeValue = 'project';
       }
 
       if (!newTask.assigned_to || isNaN(Number(newTask.assigned_to))) {
@@ -89,10 +114,10 @@ export default function TaskList({ tasks, users, jobScopes, onEditTask, onDelete
         assigned_to: Number(newTask.assigned_to),
         status: newTask.status || '',
         status_description: newTask.status_description || '',
-        due_date: newTask.due_date || '',
-        attachments: newTask.attachments || [],
+        due_date: newTask.due_date === '' || newTask.due_date === undefined ? null : newTask.due_date,
+        attachment: Array.isArray(newTask.attachments) ? newTask.attachments.join(',') : (newTask.attachments || ''),
         description: typeof newTask.description === 'string' ? newTask.description : '',
-        priority: typeof newTask.priority === 'string' ? newTask.priority : '',
+        priority: typeof newTask.priority === 'string' && newTask.priority !== '' ? newTask.priority : 'normal',
       };
 
       const createdTask = await createTask(taskToCreate);
@@ -102,6 +127,20 @@ export default function TaskList({ tasks, users, jobScopes, onEditTask, onDelete
     } catch (error) {
       console.error('Error creating task:', error);
     }
+  };
+
+  const handleDelete = async (taskId: number) => {
+    if (confirm('Are you sure you want to delete this task?')) {
+      await deleteTask(taskId);
+      onDeleteTask(taskId);
+    }
+  };
+
+  const handleNewTaskFieldChange = (field: keyof Task, value: any) => {
+    setNewTask(prev => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
   const startCreating = () => {
@@ -146,227 +185,210 @@ export default function TaskList({ tasks, users, jobScopes, onEditTask, onDelete
         )}
       </div>
 
-      <div className="p-4">
-        <div className="overflow-x-auto">
-          <div className="rounded-lg overflow-hidden">
-            <table className="min-w-full">
-              <thead className="bg-gray-50 sticky top-0 z-10">
-                <tr>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scope</th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activities</th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status Description</th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File Attachment</th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                </tr>
-              </thead>
-            </table>
-            <div className="max-h-[calc(100vh-400px)] overflow-y-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <tbody className="divide-y divide-gray-200">
-                  {isCreating && newTask && (
-                    <tr className="bg-gray-50">
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <select
-                          value={newTask.scope || (jobScopes[0] || '')}
-                          onChange={(e) => handleNewTaskFieldChange('scope', e.target.value)}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
-                        >
-                          {jobScopes.map(scope => (
-                            <option key={scope} value={scope}>{scope}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <input
-                          type="text"
-                          value={newTask.action || ''}
-                          onChange={(e) => handleNewTaskFieldChange('action', e.target.value)}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
-                        />
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <select
-                          value={newTask.assigned_to || ''}
-                          onChange={(e) => handleNewTaskFieldChange('assigned_to', e.target.value)}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
-                        >
-                          <option value="">Select member</option>
-                          {users.map(user => (
-                            <option key={user.id} value={user.id}>{user.name}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <select
-                          value={newTask.status || 'Completed'}
-                          onChange={(e) => handleNewTaskFieldChange('status', e.target.value)}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
-                        >
-                          <option value="Completed">Completed</option>
-                          <option value="In Progress">In Progress</option>
-                          <option value="Not Started">Not Started</option>
-                          <option value="Blocked">Blocked</option>
-                        </select>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <textarea
-                          value={newTask.status_description || ''}
-                          onChange={(e) => handleNewTaskFieldChange('status_description', e.target.value)}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md resize-none"
-                          rows={2}
-                        />
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <input
-                          type="date"
-                          value={newTask.due_date || ''}
-                          onChange={(e) => handleNewTaskFieldChange('due_date', e.target.value)}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
-                        />
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <input
-                          type="text"
-                          value={Array.isArray(newTask.attachments) ? newTask.attachments.join(', ') : (newTask.attachments || '')}
-                          onChange={(e) => handleNewTaskFieldChange('attachments', e.target.value.split(',').map(s => s.trim()))}
-                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
-                        />
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap flex space-x-2">
-                        <button
-                          onClick={handleCreateNewTask}
-                          title="Save"
-                          className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded-md"
-                        >
-                          ✓
-                        </button>
-                        <button
-                          onClick={() => {
-                            setIsCreating(false);
-                            setNewTask(null);
-                          }}
-                          title="Cancel"
-                          className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-2 py-1 rounded-md"
-                        >
-                          ✕
-                        </button>
-                      </td>
-                    </tr>
-                  )}
-
-                  {localTasks.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="px-4 py-4 text-center text-sm text-gray-500">
-                        Belum ada task untuk project ini. Silakan tambahkan task baru.
-                      </td>
-                    </tr>
-                  ) : (
-                    localTasks.map((task) => (
-                      <tr key={task.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <select
-                            value={typeof task.scope === 'string' && task.scope.includes(',')
-                              ? task.scope.split(',')[0].trim()
-                              : (task.scope && jobScopes.includes(task.scope) ? task.scope : (jobScopes[0] || ''))
-                            }
-                            onChange={(e) => handleFieldChange(task.id, 'scope', e.target.value)}
-                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
-                          >
-                            {jobScopes.map(scope => (
-                              <option key={scope} value={scope}>{scope}</option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <input
-                            type="text"
-                            value={task.action || ''}
-                            onChange={(e) => handleFieldChange(task.id, 'action', e.target.value)}
-                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
-                          />
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <select
-                            value={task.assigned_to || ''}
-                            onChange={(e) => handleFieldChange(task.id, 'assigned_to', e.target.value)}
-                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
-                          >
-                            <option value="">Select member</option>
-                            {users.map(user => (
-                              <option key={user.id} value={user.id}>{user.name}</option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <select
-                            value={task.status || 'Completed'}
-                            onChange={(e) => handleFieldChange(task.id, 'status', e.target.value)}
-                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
-                          >
-                            <option value="Completed">Completed</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Not Started">Not Started</option>
-                            <option value="Blocked">Blocked</option>
-                          </select>
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <textarea
-                            value={task.status_description || ''}
-                            onChange={(e) => handleFieldChange(task.id, 'status_description', e.target.value)}
-                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md resize-none"
-                            rows={2}
-                          />
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <input
-                            type="date"
-                            value={task.due_date || ''}
-                            onChange={(e) => handleFieldChange(task.id, 'due_date', e.target.value)}
-                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
-                          />
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <input
-                            type="text"
-                            value={Array.isArray(task.attachments) ? task.attachments.join(', ') : (task.attachments || '')}
-                            onChange={(e) => handleFieldChange(task.id, 'attachments', e.target.value.split(',').map(s => s.trim()))}
-                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
-                          />
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap flex space-x-2">
-                          <button
-                            onClick={() => handleSave(task)}
-                            title="Save"
-                            className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded-md"
-                          >
-                            ✓
-                          </button>
-                          <button
-                            onClick={() => alert('Notify functionality not implemented')}
-                            title="Notify"
-                            className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded-md"
-                          >
-                            !
-                          </button>
-                          <button
-                            onClick={() => handleDelete(task.id)}
-                            title="Delete"
-                            className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded-md"
-                          >
-                            🗑
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+      <div className="p-4 overflow-x-auto rounded-lg border border-gray-200 max-h-[calc(100vh-400px)]">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50 sticky top-0 z-30">
+            <tr>
+              <th scope="col" className="px-8 py-3 min-w-[225px] text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scope</th>
+              <th scope="col" className="px-8 py-3 min-w-[400px] text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
+              <th scope="col" className="px-12 py-3 min-w-[300px] text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
+              <th scope="col" className="px-8 py-3 min-w-[250px] text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th scope="col" className="px-8 py-3 min-w-[350px] text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status Description</th>
+              <th scope="col" className="px-8 py-3 min-w-[250px] text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+              <th scope="col" className="px-8 py-3 min-w-[300px] text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File Attachment</th>
+              <th scope="col" className="px-8 py-3 min-w-[250px] text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 max-h-[calc(100vh-400px)] overflow-y-auto">
+            {isCreating && newTask && (
+              <tr className="bg-gray-50">
+                <td className="px-4 py-4 whitespace-nowrap min-w-[225px]">
+                  <select
+                    value={newTask.scope || (jobScopes[0] || '')}
+                    onChange={(e) => handleNewTaskFieldChange('scope', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                  >
+                    {jobScopes.map(scope => (
+                      <option key={scope} value={scope}>{scope}</option>
+                    ))}
+                  </select>
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap min-w-[400px]">
+                  <input
+                    type="text"
+                    value={newTask.action || ''}
+                    onChange={(e) => handleNewTaskFieldChange('action', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                  />
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap">
+                  <select
+                    value={newTask.assigned_to || ''}
+                    onChange={(e) => handleNewTaskFieldChange('assigned_to', Number(e.target.value))}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                  >
+                    <option value="">Select member</option>
+                    {users.map(user => (
+                      <option key={user.id} value={user.id}>{user.name}</option>
+                    ))}
+                  </select>
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap min-w-[250px]">
+                  <select
+                    value={newTask.status || 'not_started'}
+                    onChange={(e) => handleNewTaskFieldChange('status', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                  >
+                    <option value="not_started">Not Started</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="blocked">Blocked</option>
+                  </select>
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap min-w-[350px]">
+                  <textarea
+                    value={newTask.status_description || ''}
+                    onChange={(e) => handleNewTaskFieldChange('status_description', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md resize-none"
+                    rows={2}
+                  />
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap min-w-[250px]">
+                  <input
+                    type="date"
+                    value={newTask.due_date ? newTask.due_date.split('T')[0] : ''}
+                    onChange={(e) => handleNewTaskFieldChange('due_date', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                  />
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap min-w-[300px]">
+                  <input
+                    type="text"
+                    value={Array.isArray(newTask.attachments) ? newTask.attachments.join(', ') : (newTask.attachments || '')}
+                    onChange={(e) => handleNewTaskFieldChange('attachments', e.target.value.split(',').map(s => s.trim()))}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                  />
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap flex space-x-2 min-w-[250px]">
+                  <button
+                    onClick={handleCreateNewTask}
+                    className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded-md"
+                    title="Save"
+                  >
+                    ✓
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsCreating(false);
+                      setNewTask(null);
+                    }}
+                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-2 py-1 rounded-md"
+                    title="Cancel"
+                  >
+                    ✕
+                  </button>
+                </td>
+              </tr>
+            )}
+            {localTasks.map((task) => (
+              <tr key={task.id} className="hover:bg-gray-50">
+                <td className="px-12 py-4 whitespace-nowrap min-w-[225px]">
+              <select
+                value={typeof task.scope === 'string' && task.scope.includes(',')
+                  ? task.scope.split(',')[0].trim()
+                  : (task.scope && jobScopes.includes(task.scope) ? task.scope : (jobScopes[0] || 'project'))
+                }
+                onChange={(e) => handleFieldChange(task.id, 'scope', e.target.value)}
+                className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+              >
+                {jobScopes.map(scope => (
+                  <option key={scope} value={scope}>{scope}</option>
+                ))}
+              </select>
+                </td>
+                <td className="px-12 py-4 whitespace-nowrap min-w-[400px]">
+                  <input
+                    type="text"
+                    value={task.action || ''}
+                    onChange={(e) => handleFieldChange(task.id, 'action', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                  />
+                </td>
+                <td className="px-12 py-4 whitespace-nowrap min-w-[300px]">
+                  <select
+                    value={task.assigned_to || ''}
+                    onChange={(e) => handleFieldChange(task.id, 'assigned_to', Number(e.target.value))}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                  >
+                    <option value="">Select member</option>
+                    {users.map(user => (
+                      <option key={user.id} value={user.id}>{user.name}</option>
+                    ))}
+                  </select>
+                </td>
+                <td className="px-8 py-4 whitespace-nowrap min-w-[250px]">
+                  <select
+                    value={task.status || 'completed'}
+                    onChange={(e) => handleFieldChange(task.id, 'status', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                  >
+                    <option value="completed">Completed</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="not_started">Not Started</option>
+                    <option value="blocked">Blocked</option>
+                  </select>
+                </td>
+                <td className="px-8 py-4 whitespace-nowrap min-w-[350px]">
+                  <textarea
+                    value={task.status_description || ''}
+                    onChange={(e) => handleFieldChange(task.id, 'status_description', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md resize-none"
+                    rows={2}
+                  />
+                </td>
+                <td className="px-8 py-4 whitespace-nowrap min-w-[250px]">
+                  <input
+                    type="date"
+                    value={task.due_date ? task.due_date.split('T')[0] : ''}
+                    onChange={(e) => handleFieldChange(task.id, 'due_date', e.target.value)}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                  />
+                </td>
+                <td className="px-8 py-4 whitespace-nowrap min-w-[300px]">
+                  <input
+                    type="text"
+                    value={Array.isArray(task.attachments) ? task.attachments.join(', ') : (task.attachments || '')}
+                    onChange={(e) => handleFieldChange(task.id, 'attachments', e.target.value.split(',').map(s => s.trim()))}
+                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+                  />
+                </td>
+                <td className="px-8 py-4 whitespace-nowrap flex space-x-2 min-w-[250px]">
+                  <button
+                    onClick={() => handleSave(task)}
+                    title="Save"
+                    className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded-md"
+                  >
+                    ✓
+                  </button>
+                  <button
+                    onClick={() => alert('Notify functionality not implemented')}
+                    title="Notify"
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded-md"
+                  >
+                    !
+                  </button>
+                  <button
+                    onClick={() => handleDelete(task.id)}
+                    title="Delete"
+                    className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded-md"
+                  >
+                    🗑
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
