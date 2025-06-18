@@ -49,6 +49,10 @@ export const getUsers = async (): Promise<User[]> => {
     
     return response.data;
   } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      // Throw error to be handled by caller
+      throw new Error('Unauthorized');
+    }
     console.error('Error fetching users:', error);
     throw error;
   }

@@ -120,6 +120,14 @@ export const updateProject = async (id: number, projectData: Partial<Project>): 
   }
 };
 
+export interface ProjectScope {
+  id: number;
+  name: string;
+  description?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // Delete a project
 export const deleteProject = async (id: number): Promise<void> => {
   try {
@@ -131,6 +139,22 @@ export const deleteProject = async (id: number): Promise<void> => {
     });
   } catch (error) {
     console.error(`Error deleting project with ID ${id}:`, error);
+    throw error;
+  }
+};
+
+// Get all project scopes
+export const getProjectScopes = async (): Promise<ProjectScope[]> => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.get(`${API_URL}/project-scopes`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching project scopes:', error);
     throw error;
   }
 };

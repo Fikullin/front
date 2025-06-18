@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import TaskList from '@/components/projects/TaskList';
 import { getTasks, Task, updateTask, deleteTask, createTask } from '@/lib/api/taskService';
+import { getUsers } from '@/lib/api/userService';
+import { getProject } from '@/lib/api/projectService';
 
 export default function Tasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -11,29 +13,62 @@ export default function Tasks() {
   const [jobScopes, setJobScopes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // 'all', 'completed', 'in_progress', 'not_started', 'blocked'
+  const [projectId, setProjectId] = useState<number | null>(null);
 
   useEffect(() => {
-    const fetchTasksAndUsers = async () => {
+    const fetchData = async () => {
       try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.warn('No authentication token found, redirecting to login.');
+          window.location.href = '/login'; // Redirect to login page
+          return;
+        }
+
         setLoading(true);
         const tasksData = await getTasks();
         setTasks(tasksData);
 
-        // Mock users and jobScopes for demonstration; replace with real API calls if available
-        setUsers([
-          { id: 1, name: 'Alice' },
-          { id: 2, name: 'Bob' },
-          { id: 3, name: 'Charlie' },
-        ]);
-        setJobScopes(['project', 'task', 'invoice', 'activity', 'member']);
+        const usersData = await getUsers();
+        setUsers(usersData);
+
+        // Determine projectId dynamically from tasks or other source
+        // For example, use the project_id of the first task if available
+        let currentProjectId = null;
+        if (tasksData.length > 0 && tasksData[0].project_id) {
+          currentProjectId = tasksData[0].project_id;
+          setProjectId(currentProjectId);
+        }
+
+        if (currentProjectId !== null) {
+          const projectData = await getProject(currentProjectId);
+          console.log('Project data received:', projectData);
+
+          if (projectData.job_scope) {
+            // Assuming job_scope is a comma-separated string
+            const scopesArray = projectData.job_scope.split(',').map((scope: string) => scope.trim());
+            setJobScopes(scopesArray);
+          } else {
+            setJobScopes([]);
+          }
+        } else {
+          setJobScopes([]);
+        }
       } catch (error) {
-        console.error('Error fetching tasks or users:', error);
+        if (error instanceof Error && error.message === 'Unauthorized') {
+          console.warn('Unauthorized error detected, clearing tokens and redirecting to login.');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+          return;
+        }
+        console.error('Error fetching tasks, users, or project data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTasksAndUsers();
+    fetchData();
   }, []);
 
   const handleEditTask = (taskId: number, updatedTaskData: Partial<Task>) => {
@@ -109,7 +144,7 @@ export default function Tasks() {
             onEditTask={handleEditTask}
             onDeleteTask={handleDeleteTask}
             onAddTask={handleAddTask}
-            projectId={0} // Adjust as needed or fetch dynamically
+            projectId={projectId || 0} // Pass dynamic projectId or fallback to 0
           />
         )}
       </div>

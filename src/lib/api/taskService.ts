@@ -63,6 +63,10 @@ export const getTasks = async (): Promise<Task[]> => {
     
     return response.data;
   } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      // Throw error to be handled by caller
+      throw new Error('Unauthorized');
+    }
     console.error('Error fetching tasks:', error);
     // Return empty array instead of throwing error to prevent UI crashes
     return [];
